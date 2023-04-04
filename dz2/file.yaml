@@ -1,0 +1,9 @@
+dict:
+  key1: 100
+  key2: 200
+  key3: €
+list:
+- a
+- b
+- c
+number: 42
