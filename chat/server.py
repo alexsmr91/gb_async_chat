@@ -3,6 +3,8 @@ from socket import *
 from resp import *
 import json
 from json.decoder import JSONDecodeError
+import logging
+import log.server_log_config
 DEFAULT_CHARSET = 'utf8'
 
 
@@ -28,6 +30,7 @@ class ChatServer:
     def loop(self):
         while True:
             client, addr = self.s.accept()
+            logger.info("Connected")
             data = client.recv(1000000).decode(DEFAULT_CHARSET)
             obj = self.load_json_or_none(data)
             if obj:
@@ -36,25 +39,28 @@ class ChatServer:
             else:
                 msg = WRONG_JSON_OR_REQUEST_400
                 log_msg = f'{addr} WRONG JSON : "{data}"'
-            print(log_msg)
+            logger.info(log_msg)
             client.send(msg.encode(DEFAULT_CHARSET))
 
 
 if __name__ == "__main__":
+    logger = logging.getLogger('server')
+    logger.info("Starting server")
     parser = argparse.ArgumentParser(description='Server side chat program')
     parser.add_argument(
         '--port',
         metavar='p',
         type=int,
         default=7777,
-        help='Port number for listening, default 7777'
+        help='Port number for listening, default 7777',
     )
     parser.add_argument(
         '--addr',
         metavar='ip',
         type=str,
         default='0.0.0.0',
-        help='IP address for listening, default 0.0.0.0'
+        help='IP address for listening, default 0.0.0.0',
+
     )
     args = parser.parse_args()
     PORT = args.port
