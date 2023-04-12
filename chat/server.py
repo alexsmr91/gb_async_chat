@@ -16,21 +16,28 @@ class ChatServer:
         self.s.listen(self.max_conn)
 
     def __del__(self):
-        print("Closing connection")
         self.s.close()
+
+    def load_json_or_none(self, data):
+        try:
+            obj = json.loads(data)
+        except JSONDecodeError:
+            obj = None
+        return obj
 
     def loop(self):
         while True:
             client, addr = self.s.accept()
             data = client.recv(1000000).decode(DEFAULT_CHARSET)
-            try:
-                obj = json.loads(data)
-                print(addr, " : ", obj)
-                msg = OK_200.encode(DEFAULT_CHARSET)
-            except JSONDecodeError:
-                print(f'{addr} WRONG JSON : "{data}"')
-                msg = WRONG_JSON_OR_REQUEST_400.encode(DEFAULT_CHARSET)
-            client.send(msg)
+            obj = self.load_json_or_none(data)
+            if obj:
+                msg = OK_200
+                log_msg = f'{addr} : {obj}'
+            else:
+                msg = WRONG_JSON_OR_REQUEST_400
+                log_msg = f'{addr} WRONG JSON : "{data}"'
+            print(log_msg)
+            client.send(msg.encode(DEFAULT_CHARSET))
 
 
 if __name__ == "__main__":
