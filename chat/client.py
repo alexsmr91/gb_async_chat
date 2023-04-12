@@ -1,7 +1,8 @@
 import argparse
-import time
+from time import time
 from socket import *
 import json
+from json.decoder import JSONDecodeError
 DEFAULT_CHARSET = 'utf8'
 USER_NAME = "C0deMaver1ck"
 USER_STATUS = "Yep, I am here!"
@@ -15,21 +16,23 @@ class ChatClient:
         self.s.connect((self.host, self.port))
 
     def __del__(self):
-        print("Closing connection")
         self.s.close()
 
     def send_presence(self):
         presence_obj = {
             "action": "presence",
-            "time": int(time.time()),
+            "time": int(time()),
             "type": "status",
             "user": {
                 "account_name": USER_NAME,
                 "status": USER_STATUS
             }
         }
-        msg = json.dumps(presence_obj).encode(DEFAULT_CHARSET)
-        self.s.send(msg)
+        msg = json.dumps(presence_obj)
+        return self.send_msg(msg)
+
+    def send_msg(self, msg):
+        self.s.send(msg.encode(DEFAULT_CHARSET))
         data = self.s.recv(1000000)
         return data.decode(DEFAULT_CHARSET)
 
