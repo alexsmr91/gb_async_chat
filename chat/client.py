@@ -2,7 +2,9 @@ import argparse
 from time import time
 from socket import *
 import json
-from json.decoder import JSONDecodeError
+import logging
+import log.client_log_config
+from resp import *
 DEFAULT_CHARSET = 'utf8'
 USER_NAME = "C0deMaver1ck"
 USER_STATUS = "Yep, I am here!"
@@ -14,6 +16,7 @@ class ChatClient:
         self.port = port
         self.s = socket(AF_INET, SOCK_STREAM)
         self.s.connect((self.host, self.port))
+        logger.info("Connected")
 
     def __del__(self):
         self.s.close()
@@ -29,21 +32,27 @@ class ChatClient:
             }
         }
         msg = json.dumps(presence_obj)
+        logger.info("Sending presence message")
         return self.send_msg(msg)
 
     def send_msg(self, msg):
-        self.s.send(msg.encode(DEFAULT_CHARSET))
-        data = self.s.recv(1000000)
-        return data.decode(DEFAULT_CHARSET)
+        try:
+            self.s.send(msg.encode(DEFAULT_CHARSET))
+            data = self.s.recv(1000000)
+            return data.decode(DEFAULT_CHARSET)
+        except Exception as e:
+            logger.critical(e)
+        return INTERNAL_ERROR_500
 
 
 if __name__ == "__main__":
+    logger = logging.getLogger('client')
     parser = argparse.ArgumentParser(description='Client side chat program')
     parser.add_argument(
         'addr',
         metavar='addr',
         type=str,
-        help='Server addres for connection'
+        help='Server address for connection'
     )
     parser.add_argument(
         '--port',
@@ -57,4 +66,4 @@ if __name__ == "__main__":
     HOST = args.addr
 
     chat = ChatClient(HOST, PORT)
-    print(chat.send_presence())
+    logger.info(chat.send_presence())
