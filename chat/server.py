@@ -5,7 +5,19 @@ import json
 from json.decoder import JSONDecodeError
 import logging
 import log.server_log_config
+from functools import wraps
+import traceback
 DEFAULT_CHARSET = 'utf8'
+logger = logging.getLogger('server')
+
+
+def log_enabler(func):
+    @wraps(func)
+    def decorated(*args, **kwargs):
+        msg = f'Функция {func.__name__} была вызвана из {traceback.extract_stack(limit=2)[-2][2]} с аргументами (args: {args}, kwargs: {kwargs})'
+        logger.info(msg)
+        return func(*args, **kwargs)
+    return decorated
 
 
 class ChatServer:
@@ -20,6 +32,7 @@ class ChatServer:
     def __del__(self):
         self.s.close()
 
+    @log_enabler
     def load_json_or_none(self, data):
         try:
             obj = json.loads(data)
@@ -27,6 +40,7 @@ class ChatServer:
             obj = None
         return obj
 
+    @log_enabler
     def loop(self):
         while True:
             client, addr = self.s.accept()
@@ -43,8 +57,9 @@ class ChatServer:
             client.send(msg.encode(DEFAULT_CHARSET))
 
 
-if __name__ == "__main__":
-    logger = logging.getLogger('server')
+@log_enabler
+def main():
+
     logger.info("Starting server")
     parser = argparse.ArgumentParser(description='Server side chat program')
     parser.add_argument(
@@ -68,3 +83,7 @@ if __name__ == "__main__":
 
     server = ChatServer(ADDR, PORT)
     server.loop()
+
+
+if __name__ == "__main__":
+    main()
