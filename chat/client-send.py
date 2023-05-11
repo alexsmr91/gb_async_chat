@@ -1,6 +1,5 @@
 import argparse
 import random
-from json import JSONDecodeError
 from time import time, sleep
 from socket import *
 import json
@@ -23,13 +22,6 @@ class ChatClient:
 
     def __del__(self):
         self.s.close()
-
-    def load_json_or_none(self, data):
-        try:
-            obj = json.loads(data)
-        except JSONDecodeError:
-            obj = None
-        return obj
 
     def send_presence(self, msg=''):
         presence_obj = {
@@ -57,12 +49,9 @@ class ChatClient:
 
     def loop(self):
         while True:
-            try:
-                data = self.s.recv(10000)
-                msg = self.load_json_or_none(data.decode(DEFAULT_CHARSET))
-                print(msg['user']['account_name'], ' : ', msg['msg'])
-            except OSError:
-                pass
+            print(f'{USER_NAME}: ')
+            msg = input()
+            self.send_presence(msg)
 
 
 if __name__ == '__main__':
