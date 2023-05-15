@@ -1,9 +1,7 @@
 import argparse
 from collections import defaultdict
 from socket import *
-
 import select
-
 from resp import *
 import json
 from json.decoder import JSONDecodeError
@@ -11,6 +9,7 @@ import logging
 import log.server_log_config
 from functools import wraps
 import traceback
+
 DEFAULT_CHARSET = 'utf8'
 logger = logging.getLogger('server')
 
@@ -57,15 +56,13 @@ class ChatServer:
             else:
                 obj = self.load_json_or_none(data.decode(DEFAULT_CHARSET))
                 if obj:
-                    msg = OK_200
+                    msg = {'status': OK_200}
                     log_msg = f'{sock.getpeername()} : {obj}'
-                    #obj.setdefault('sock', sock)
-                    #self.messages.append(obj)
-                    self.responses[sock].append(obj)
                     for client in self.clients:
-                        self.responses[client].append(obj)
+                        if client != sock:
+                            self.responses[client].append(obj)
                 else:
-                    msg = WRONG_JSON_OR_REQUEST_400
+                    msg = {'status': WRONG_JSON_OR_REQUEST_400}
                     log_msg = f'{sock.getpeername()} WRONG JSON : "{data}"'
                 logger.warning(log_msg)
                 self.responses[sock].append(msg)
