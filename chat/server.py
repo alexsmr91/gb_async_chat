@@ -24,7 +24,7 @@ def log_enabler(func):
 
 
 class ChatServer:
-    def __init__(self, addr, port, max_conn=5):
+    def __init__(self, addr, port, max_conn=50):
         self.addr = addr
         self.port = port
         self.max_conn = max_conn
