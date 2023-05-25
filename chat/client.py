@@ -10,7 +10,9 @@ import logging
 import log.client_log_config
 from resp import *
 import curses
+from validators import Port, ClientCheck
 
+PACKET_SIZE = 10000
 DEFAULT_CHARSET = 'utf8'
 USER_NAME = 'User'
 USER_STATUS = 'Online'
@@ -21,7 +23,8 @@ def ttime():
     return str(datetime.now().time())[0:8]
 
 
-class ChatClient:
+class ChatClient(metaclass=ClientCheck):
+    port = Port()
     def __init__(self, host, port):
         self.host = host
         self.port = port
@@ -58,7 +61,7 @@ class ChatClient:
     def send_msg(self, msg):
         try:
             self.s.send(msg.encode(DEFAULT_CHARSET))
-            data = self.s.recv(10000)
+            data = self.s.recv(PACKET_SIZE)
             return data.decode(DEFAULT_CHARSET)
         except Exception as e:
             logger.critical(e)
@@ -67,7 +70,7 @@ class ChatClient:
     def loop(self):
         while True:
             try:
-                data = self.s.recv(10000)
+                data = self.s.recv(PACKET_SIZE)
                 msg = self.load_json_or_none(data.decode(DEFAULT_CHARSET))
                 if 'user' in msg:
                     messages.append(f'{ttime()}\n{msg["user"]["account_name"]} : {msg["msg"]}')

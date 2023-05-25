@@ -9,7 +9,9 @@ import logging
 import log.server_log_config
 from functools import wraps
 import traceback
+from validators import Port, ServerCheck
 
+PACKET_SIZE = 10000
 DEFAULT_CHARSET = 'utf8'
 logger = logging.getLogger('server')
 
@@ -23,7 +25,9 @@ def log_enabler(func):
     return decorated
 
 
-class ChatServer:
+class ChatServer(metaclass=ServerCheck):
+    port = Port()
+
     def __init__(self, addr, port, max_conn=50):
         self.addr = addr
         self.port = port
@@ -49,7 +53,7 @@ class ChatServer:
     def read_requests(self, r_clients):
         for sock in r_clients:
             try:
-                data = sock.recv(10000)
+                data = sock.recv(PACKET_SIZE)
             except:
                 logger.info('Client {} {} disconected'.format(sock.fileno(), sock.getpeername()))
                 self.clients.remove(sock)
