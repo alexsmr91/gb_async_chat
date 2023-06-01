@@ -180,8 +180,9 @@ class Render:
             #    self.message += f'${key}'
 
 
+"""
 if __name__ == '__main__':
-    logger = logging.getLogger('client')
+    logger = logging.getLogger('chat')
     parser = argparse.ArgumentParser(description='Client side chat program')
     parser.add_argument(
         'addr',
@@ -218,3 +219,19 @@ if __name__ == '__main__':
     t3 = Thread(target=chat.loop)
     t3.daemon = True
     t3.start()
+"""
+
+
+if __name__ == '__main__':
+    import sys
+    from PyQt5 import QtWidgets
+    import py_form
+
+
+    app = QtWidgets.QApplication(sys.argv)
+    window = QtWidgets.QWidget()
+    ui = py_form.Ui_Form()
+    ui.setupUi(window)
+    ui.btn_send.clicked.connect(QtWidgets.qApp.quit)
+    window.show()
+    sys.exit(app.exec_())

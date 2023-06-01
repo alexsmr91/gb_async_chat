@@ -181,7 +181,7 @@ class Render:
 
 
 if __name__ == '__main__':
-    logger = logging.getLogger('client')
+    logger = logging.getLogger('chat')
     parser = argparse.ArgumentParser(description='Client side chat program')
     parser.add_argument(
         'addr',

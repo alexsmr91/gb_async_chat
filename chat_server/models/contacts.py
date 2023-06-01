@@ -1,6 +1,5 @@
 from sqlalchemy import Column, Integer, ForeignKey
-from chat.database.dbcore import Base
-from chat.models.clients import Clients
+from chat_server.database.dbcore import Base
 from sqlalchemy.orm import relationship, backref
 
 

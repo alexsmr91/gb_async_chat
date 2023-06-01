@@ -9,7 +9,7 @@ class TestChatClient(unittest.TestCase):
     def setUp(self) -> None:
         self.host = "127.0.0.1"
         self.port = 8888
-        self.p = subprocess.Popen(['python', 'server.py', f'--port={self.port}'])
+        self.p = subprocess.Popen(['python', 'chat_server.py', f'--port={self.port}'])
 
     def doCleanups(self):
         self.p.kill()

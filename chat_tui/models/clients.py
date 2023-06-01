@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Integer, String, Date
-from chat.database.dbcore import Base
+from chat_tui.database.dbcore import Base
 from sqlalchemy.orm import relationship
 
 

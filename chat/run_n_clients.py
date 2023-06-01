@@ -5,7 +5,7 @@ import sys
 def run_clients(num_instances):
     server_ip = 'localhost'
     venv_python_path = '../../venvs/gb_async_chat/Scripts/python.exe'
-    command = ['cmd', '/c', 'start', venv_python_path, 'client.py', server_ip, 'user_']
+    command = ['cmd', '/c', 'start', venv_python_path, 'chat.py', server_ip, 'user_']
 
     for i in range(num_instances):
         command[len(command)-1] = f'user_{i+1}'

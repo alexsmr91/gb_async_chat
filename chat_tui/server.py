@@ -14,7 +14,7 @@ from database.database import DBManager
 
 PACKET_SIZE = 10000
 DEFAULT_CHARSET = 'utf8'
-logger = logging.getLogger('server')
+logger = logging.getLogger('chat_server')
 
 
 def log_enabler(func):
@@ -120,7 +120,7 @@ class ChatServer(metaclass=ServerCheck):
 @log_enabler
 def main():
 
-    logger.info('Starting server')
+    logger.info('Starting chat_server')
     parser = argparse.ArgumentParser(description='Server side chat program')
     parser.add_argument(
         '--port',

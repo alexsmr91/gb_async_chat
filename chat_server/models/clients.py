@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Integer, String, Date
-from chat.database.dbcore import Base
+from chat_server.database.dbcore import Base
 from sqlalchemy.orm import relationship
 
 
@@ -12,8 +12,6 @@ class Clients(Base):
     surname = Column(String)
     birthday_date = Column(Date)
     status = Column(String)
-    #contacts = relationship('Clients', secondary='contacts', back_populates='clients')
-    #logins = relationship('Clients', secondary='logins', back_populates='clients')
 
     def __repr__(self):
         return f'{self.login}({self.name} {self.surname})'

@@ -3,11 +3,11 @@ from datetime import datetime
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from chat.database.dbcore import Base
+from chat_tui.database.dbcore import Base
 
-from chat.models.clients import Clients
-from chat.models.contacts import Contacts
-from chat.models.logins import Logins
+from chat_tui.models.clients import Clients
+from chat_tui.models.contacts import Contacts
+from chat_tui.models.logins import Logins
 
 DATABASE_NAME = 'database.db'
 

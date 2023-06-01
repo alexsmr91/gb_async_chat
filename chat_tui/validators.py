@@ -1,6 +1,6 @@
 import dis
 import logging
-logger = logging.getLogger('server')
+logger = logging.getLogger('chat_server')
 
 
 class Port:
