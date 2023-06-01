@@ -10,6 +10,7 @@ import log.server_log_config
 from functools import wraps
 import traceback
 from validators import Port, ServerCheck
+from database.database import DBManager
 
 PACKET_SIZE = 10000
 DEFAULT_CHARSET = 'utf8'
@@ -38,6 +39,7 @@ class ChatServer(metaclass=ServerCheck):
         self.s.settimeout(0.2)
         self.clients = []
         self.responses = defaultdict(list)
+        self.db = DBManager('server.sqlite.db')
         #self.messages = []
 
     def __del__(self):
@@ -60,6 +62,9 @@ class ChatServer(metaclass=ServerCheck):
             else:
                 obj = self.load_json_or_none(data.decode(DEFAULT_CHARSET))
                 if obj:
+                    login = obj['user']['account_name']
+                    ip = r_clients[0].getpeername()[0]
+                    self.db.add_new_login(login, ip)
                     msg = {'status': OK_200}
                     log_msg = f'{sock.getpeername()} : {obj}'
                     for client in self.clients:

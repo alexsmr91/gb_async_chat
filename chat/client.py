@@ -190,18 +190,26 @@ if __name__ == '__main__':
         help='Server address for connection'
     )
     parser.add_argument(
+        'login',
+        metavar='login',
+        type=str,
+        help='Your login'
+    )
+    parser.add_argument(
         '--port',
         metavar='p',
         type=int,
         default=7777,
         help='Port number for connection, default 7777'
     )
+
     args = parser.parse_args()
     PORT = args.port
     HOST = args.addr
+    login = args.login
 
     chat = ChatClient(HOST, PORT)
-    USER_NAME = USER_NAME + ' - ' + str(random.randint(1, 1000))
+    USER_NAME = login
     chat.send_presence(msg='вошел в чат')
     messages.append(f'{ttime()}\n{USER_NAME} : вошел в чат')
     renderer = Render()
