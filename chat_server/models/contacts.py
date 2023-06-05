@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, ForeignKey
 from chat_server.database.dbcore import Base
-from sqlalchemy.orm import relationship, backref
+from sqlalchemy.orm import relationship
 
 
 class Contacts(Base):
@@ -13,4 +13,4 @@ class Contacts(Base):
     client = relationship('Clients', foreign_keys=[client_id], backref='contacts')
 
     def __repr__(self):
-        return f'{self.owner_id} - {self.contact_id}'
+        return f'{self.owner_id} - {self.client_id}'

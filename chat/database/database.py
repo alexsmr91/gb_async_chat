@@ -1,15 +1,13 @@
 from os import path
-from datetime import datetime
-
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, MetaData, Table
 from sqlalchemy.orm import sessionmaker
 from chat.database.dbcore import Base
 
-from chat.models.clients import Clients
 from chat.models.contacts import Contacts
-from chat.models.logins import Logins
+from chat.models.history import History
+from chat.models.profile import Profile
 
-DATABASE_NAME = 'database.db'
+DATABASE_NAME = 'chat.db'
 
 
 class Singleton(type):
@@ -34,17 +32,34 @@ class DBManager(metaclass=Singleton):
     def close(self):
         self._session.close()
 
-    def add_client(self, login="", name="", surname="", birthday_date=datetime.now(), status=""):
-        client = Clients(login=login, name=name, surname=surname, birthday_date=birthday_date, status=status)
-        self._session.add(client)
-        self._session.commit()
-        return client
-
-    def add_new_login(self, login, ip):
-        client = self._session.query(Clients).filter_by(login=login).first()
-        if not client:
-            client = self.add_client(login=login)
-        new_login = Logins(client_id=client.id, date_time=datetime.now(), ip_address=ip)
-        self._session.add(new_login)
+    def renew_contacts(self, contacts):
+        self.clear_table('contacts')
+        for con in contacts:
+            contact = Contacts(login=con)
+            self._session.add(contact)
         self._session.commit()
         self.close()
+
+
+    def clear_table(self, table):
+        table = Table(table, MetaData())
+        delete_statement = table.delete()
+        self._session.execute(delete_statement)
+        self._session.commit()
+
+    def renew_profile(self, login, name, surname, birthday_date, status):
+        res = self.get_my_profile()
+        if not res:
+            profile = Profile(login=login, name=name, surname=surname, birthday_date=birthday_date, status=status)
+            self._session.add(profile)
+        else:
+            res.login = login
+            res.name = name
+            res.surname = surname
+            res.birthday_date = birthday_date
+            res. status = status
+        self._session.commit()
+        self.close()
+
+    def get_my_profile(self):
+        return self._session.query(Profile).filter_by().first()
