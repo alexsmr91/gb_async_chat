@@ -1,8 +1,9 @@
 import logging
+from logging.handlers import TimedRotatingFileHandler
 
 formatter = logging.Formatter('%(asctime)s %(levelname)-8s %(module)s %(message)s')
-handler = logging.FileHandler('chat.log')
+handler = TimedRotatingFileHandler('chat_server.log', when="d", interval=1)
 handler.setFormatter(formatter)
-logger = logging.getLogger('chat')
+logger = logging.getLogger('chat_server')
 logger.setLevel(logging.DEBUG)
 logger.addHandler(handler)

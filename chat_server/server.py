@@ -14,7 +14,7 @@ from database.database import DBManager
 
 PACKET_SIZE = 10000
 DEFAULT_CHARSET = 'utf8'
-logger = logging.getLogger('server')
+logger = logging.getLogger('chat_server')
 
 
 def log_enabler(func):
@@ -24,6 +24,23 @@ def log_enabler(func):
         logger.info(msg)
         return func(*args, **kwargs)
     return decorated
+
+
+class ObjDict(dict):
+    def __getattr__(self, name):
+        if name in self:
+            return self[name]
+        else:
+            return None
+
+    def __setattr__(self, name, value):
+        self[name] = value
+
+    def __delattr__(self, name):
+        if name in self:
+            del self[name]
+        else:
+            return None
 
 
 class ChatServer(metaclass=ServerCheck):
@@ -47,10 +64,55 @@ class ChatServer(metaclass=ServerCheck):
 
     def load_json_or_none(self, data):
         try:
-            obj = json.loads(data)
+            obj = ObjDict(json.loads(data))
         except JSONDecodeError:
-            obj = None
+            obj = ObjDict({})
         return obj
+
+    def message_handler(self, obj, ip):
+        if obj.action == 'login':
+            login = obj.login
+            client = self.db.add_new_login(login, ip)
+            return {'status': OK_200, 'client': client}
+
+        if obj.action == 'presence':
+            login = obj.user['login']
+            client = self.db.get_client_by_login(login)
+            return {'status': OK_200, 'client': client}
+
+        if obj.action == 'get_contacts':
+            login = obj.login
+            contacts = self.db.get_contacts(login)
+            return {"response": CONFIRMATION_202, "alert": contacts}
+
+        if obj.action == 'add_contact' or obj.action == 'del_contact':
+            owner_login = obj.login
+            client_login = obj.contact_login
+            try:
+                owner_id = self.db.get_client_by_login(owner_login).id
+            except AttributeError:
+                return {"response": NOT_FOUND_404}
+            try:
+                client_id = self.db.get_client_by_login(client_login).id
+            except AttributeError:
+                return {"response": NOT_FOUND_404}
+            friends = self.db.are_friends(owner_id, client_id)
+
+            if obj.action == 'add_contact':
+                if not friends:
+                    self.db.add_contact(owner_id, client_id)
+                    return {"response": CONFIRMATION_202}
+                else:
+                    # Уже есть в списке контактов
+                    return {"response": NOT_FOUND_404}
+            else:
+                if friends:
+                    self.db.del_contact(owner_id, client_id)
+                    return {"response": CONFIRMATION_202}
+                else:
+                    # Некого удалять
+                    return {"response": NOT_FOUND_404}
+
 
     def read_requests(self, r_clients):
         for sock in r_clients:
@@ -61,15 +123,10 @@ class ChatServer(metaclass=ServerCheck):
                 self.clients.remove(sock)
             else:
                 obj = self.load_json_or_none(data.decode(DEFAULT_CHARSET))
-                if obj:
-                    login = obj['user']['account_name']
-                    ip = r_clients[0].getpeername()[0]
-                    self.db.add_new_login(login, ip)
-                    msg = {'status': OK_200}
+                ip = r_clients[0].getpeername()[0]
+                msg = self.message_handler(obj, ip)
+                if msg:
                     log_msg = f'{sock.getpeername()} : {obj}'
-                    for client in self.clients:
-                        if client != sock:
-                            self.responses[client].append(obj)
                 else:
                     msg = {'status': WRONG_JSON_OR_REQUEST_400}
                     log_msg = f'{sock.getpeername()} WRONG JSON : "{data}"'
@@ -120,7 +177,7 @@ class ChatServer(metaclass=ServerCheck):
 @log_enabler
 def main():
 
-    logger.info('Starting server')
+    logger.info('Starting chat_server')
     parser = argparse.ArgumentParser(description='Server side chat program')
     parser.add_argument(
         '--port',
