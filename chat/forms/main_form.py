@@ -89,21 +89,12 @@ class MainWindow(QWidget):
         self.setMouseTracking(True)
         self.ui = Ui_Form()
         self.ui.setupUi(self)
-        #self.selected_contact_item_text = ""
-        self.ui.lst_contacts.mouseReleaseEvent = self.lst_contacts_mouse_release
 
     def open_login_dialog(self):
         dialog = DialogWindow(self)
         result = dialog.exec_()
         if result:
             return dialog.get_text()
-
-    def lst_contacts_mouse_release(self, event):
-        index = self.ui.lst_contacts.indexAt(event.pos())
-        if index.isValid():
-            self.selected_contact_item_text = index.data()
-            self.ui.txt_search.setText(self.selected_contact_item_text)
-        QListView.mouseReleaseEvent(self.ui.lst_contacts, event)
 
     def show_yes_no_dialog(self, text):
         reply = QMessageBox.question(self, "Подтверждение", text, QMessageBox.Yes | QMessageBox.No, QMessageBox.No)

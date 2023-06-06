@@ -1,11 +1,12 @@
+import datetime
 from os import path
-from sqlalchemy import create_engine, MetaData, Table
+from sqlalchemy import create_engine, MetaData, Table, or_, and_
 from sqlalchemy.orm import sessionmaker
-from chat.database.dbcore import Base
+from database.dbcore import Base
 
-from chat.models.contacts import Contacts
-from chat.models.history import History
-from chat.models.profile import Profile
+from models.contacts import Contacts
+from models.messages import Message
+from models.profile import Profile
 
 DATABASE_NAME = 'chat.db'
 
@@ -40,7 +41,6 @@ class DBManager(metaclass=Singleton):
         self._session.commit()
         self.close()
 
-
     def clear_table(self, table):
         table = Table(table, MetaData())
         delete_statement = table.delete()
@@ -63,3 +63,33 @@ class DBManager(metaclass=Singleton):
 
     def get_my_profile(self):
         return self._session.query(Profile).filter_by().first()
+
+    def add_message(self, from_login, to_login, msg, time=datetime.datetime.now()):
+        message = Message(from_login=from_login, to_login=to_login, message=msg, date_time=time)
+        self._session.add(message)
+        self._session.commit()
+        res = f'{message}'
+        self.close()
+        return res
+
+    def get_chat_history(self, from_login, login):
+        res = []
+        messages = self._session.query(Message).filter(
+            or_(
+                and_(Message.from_login == from_login, Message.to_login == login),
+                and_(Message.from_login == login, Message.to_login == from_login)
+            )
+    ).order_by(Message.date_time.asc()).all()
+        for message in messages:
+            res.append(f'{message}')
+        return res
+
+    def clear_history(self, from_login, login):
+        messages = self._session.query(Message).filter(
+            or_(
+                and_(Message.from_login == from_login, Message.to_login == login),
+                and_(Message.from_login == login, Message.to_login == from_login)
+            )
+        ).delete()
+        self._session.commit()
+        self.close()

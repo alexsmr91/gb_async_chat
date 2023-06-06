@@ -36,3 +36,20 @@ def ttime():
 
 def str2date(str):
     return datetime.strptime(str, "%Y-%m-%d").date()
+
+
+def load_server_config(file_path):
+    setup_dict = {'host': '127.0.0.1', 'port': 7777}
+    try:
+        with open(file_path, 'r') as file:
+            for line in file:
+                try:
+                    key, value = line.strip().split('=')
+                    setup_dict[key.strip()] = value.strip()
+                except ValueError:
+                    pass
+    except FileNotFoundError:
+        with open(file_path, 'w') as file:
+            for key, value in setup_dict.items():
+                file.write(f"{key}={value}\n")
+    return setup_dict
