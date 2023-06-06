@@ -1,5 +1,6 @@
 import argparse
 from collections import defaultdict
+from time import time
 from socket import *
 import select
 from resp import *
@@ -53,11 +54,11 @@ class ChatServer(metaclass=ServerCheck):
         self.s = socket(AF_INET, SOCK_STREAM)
         self.s.bind((self.addr, self.port))
         self.s.listen(self.max_conn)
-        self.s.settimeout(0.2)
+        self.s.settimeout(0.1)
         self.clients = []
+        self.client_logins = {}
         self.responses = defaultdict(list)
         self.db = DBManager('server.sqlite.db')
-        #self.messages = []
 
     def __del__(self):
         self.s.close()
@@ -69,10 +70,12 @@ class ChatServer(metaclass=ServerCheck):
             obj = ObjDict({})
         return obj
 
-    def message_handler(self, obj, ip):
+    def message_handler(self, obj, sock):
         if obj.action == 'login':
             login = obj.login
+            ip = sock.getpeername()[0]
             client = self.db.add_new_login(login, ip)
+            self.client_logins.setdefault(login, sock)
             return {'status': OK_200, 'client': client}
 
         if obj.action == 'presence':
@@ -113,43 +116,72 @@ class ChatServer(metaclass=ServerCheck):
                     # Некого удалять
                     return {"response": NOT_FOUND_404}
 
+        if obj.action == 'send_message':
+            from_client_login = obj.login
+            to_client_login = obj.contact_login
+            res = self.send_message(from_client_login, to_client_login, obj.message)
+            return res
 
     def read_requests(self, r_clients):
         for sock in r_clients:
             try:
                 data = sock.recv(PACKET_SIZE)
-            except:
-                logger.info('Client {} {} disconected'.format(sock.fileno(), sock.getpeername()))
-                self.clients.remove(sock)
+            except Exception as e:
+                self.client_disconected(sock, e)
             else:
-                obj = self.load_json_or_none(data.decode(DEFAULT_CHARSET))
-                ip = r_clients[0].getpeername()[0]
-                msg = self.message_handler(obj, ip)
-                if msg:
-                    log_msg = f'{sock.getpeername()} : {obj}'
+                received_obj = self.load_json_or_none(data.decode(DEFAULT_CHARSET))
+                obj = self.message_handler(received_obj, sock)
+                if obj:
+                    log_msg = f'{sock.getpeername()} : {received_obj}'
                 else:
-                    msg = {'status': WRONG_JSON_OR_REQUEST_400}
+                    obj = {'status': WRONG_JSON_OR_REQUEST_400}
                     log_msg = f'{sock.getpeername()} WRONG JSON : "{data}"'
                 logger.warning(log_msg)
-                self.responses[sock].append(msg)
+                self.responses[sock].append(obj)
 
-    def send_message(self, message, sock):
-        msg = json.dumps(message)
+    def send_message(self, from_client_login, to_client_login, message):
+        try:
+            to_sock = self.client_logins[to_client_login]
+        except KeyError:
+            client_id = self.db.get_client_by_login(to_client_login)
+            if client_id:
+                return {'status': OFFLINE_410}
+            else:
+                return {'status': NOT_FOUND_404}
+        obj = {
+            "action": "send_message",
+            "contact_login": to_client_login,
+            "time": int(time()),
+            "login": from_client_login,
+            "message": message
+        }
+        logger.info('Add message to queue')
+        self.responses[to_sock].append(obj)
+        return {'status': CONFIRMATION_202}
+
+    def _send_message(self, dict_obj, sock):
+        msg = json.dumps(dict_obj)
         resp = msg.encode(DEFAULT_CHARSET)
         try:
             sock.send(resp)
-        except:
-            logger.info('Client {} {} disconected'.format(sock.fileno(), sock.getpeername()))
+        except Exception as e:
+            self.client_disconected(sock, e)
             sock.close()
-            if sock in self.clients:
-                self.clients.remove(sock)
+
+    def client_disconected(self, sock, e):
+        logger.info(f'Client {sock.fileno()} : {sock.getpeername()} disconected.')  # Error: {e}
+        self.clients.remove(sock)
+        for key, value in self.client_logins.items():
+            if value == sock:
+                self.client_logins.pop(key)
+                break
 
     def write_responses(self, reqs, w_clients):
         for sock in w_clients:
             if sock in reqs:
                 if reqs[sock] != []:
                     msg = reqs[sock].pop()
-                    self.send_message(msg, sock)
+                    self._send_message(msg, sock)
 
     @log_enabler
     def loop(self):

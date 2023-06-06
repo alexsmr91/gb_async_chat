@@ -24,10 +24,10 @@ class TestChatClient(unittest.TestCase):
         self.assertEqual(ChatClient(self.host, self.port).send_presence(), OK_200)
 
     def test_send_msg(self):
-        self.assertEqual(ChatClient(self.host, self.port).send_msg('{ "message": "some text" }'), OK_200)
+        self.assertEqual(ChatClient(self.host, self.port)._send_msg('{ "message": "some text" }'), OK_200)
 
     def test_send_msg_wrong_json(self):
-        self.assertEqual(ChatClient(self.host, self.port).send_msg("some wrong data"), WRONG_JSON_OR_REQUEST_400)
+        self.assertEqual(ChatClient(self.host, self.port)._send_msg("some wrong data"), WRONG_JSON_OR_REQUEST_400)
 
 
 if __name__ == "__main__":

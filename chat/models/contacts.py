@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Integer, String
-from chat.database.dbcore import Base
+from database.dbcore import Base
 
 
 class Contacts(Base):
