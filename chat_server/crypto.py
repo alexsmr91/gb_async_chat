@@ -1,6 +1,5 @@
 from cryptography.hazmat.primitives.asymmetric import rsa, padding
 from cryptography.hazmat.primitives import hashes
-from config import *
 
 
 def generate_key_pair():
@@ -9,7 +8,6 @@ def generate_key_pair():
 
 
 def encrypt_message(message, public_key):
-    public_key.encrypt
     encrypted_message = public_key.encrypt(
         message,
         padding.OAEP(
@@ -27,5 +25,5 @@ def decrypt_message(encrypted_message, private_key):
             mgf=padding.MGF1(algorithm=hashes.SHA256()),
             algorithm=hashes.SHA256(),
             label=None
-        )).decode(DEFAULT_CHARSET)
+        ))
     return decrypted_message
