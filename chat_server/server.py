@@ -13,6 +13,7 @@ import traceback
 from validators import Port, ServerCheck
 from database.database import DBManager
 from config import *
+from utils import *
 
 logger = logging.getLogger('chat_server')
 
@@ -46,18 +47,20 @@ class ObjDict(dict):
 class ChatServer(metaclass=ServerCheck):
     port = Port()
 
-    def __init__(self, addr, port, max_conn=50):
+    def __init__(self, addr, port):
         self.addr = addr
         self.port = port
-        self.max_conn = max_conn
+        self.max_conn = MAX_CONNECTIONS
         self.s = socket(AF_INET, SOCK_STREAM)
         self.s.bind((self.addr, self.port))
         self.s.listen(self.max_conn)
-        self.s.settimeout(0.1)
+        self.s.settimeout(TIME_OUT)
         self.clients = []
+        self.private_keys = {}
+        self.public_keys = {}
         self.client_logins = {}
         self.responses = defaultdict(list)
-        self.db = DBManager('server.sqlite.db')
+        self.db = DBManager(DB_DEF_NAME)
 
     def __del__(self):
         self.s.close()
@@ -159,8 +162,7 @@ class ChatServer(metaclass=ServerCheck):
         return {'status': CONFIRMATION_202}
 
     def _send_message(self, dict_obj, sock):
-        msg = json.dumps(dict_obj)
-        resp = msg.encode(DEFAULT_CHARSET)
+        resp = obj2byte(dict_obj)
         try:
             sock.send(resp)
         except Exception as e:

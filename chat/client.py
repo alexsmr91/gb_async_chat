@@ -48,7 +48,6 @@ class ChatClient(metaclass=ClientCheck):
         self.s.settimeout(TIMEOUT)
         self.db = DBManager(db_path)
         self.messages = []
-        self.connect()
         self.t = Thread(target=self.recive)
         self.t.daemon = True
         self.block = False
@@ -137,15 +136,13 @@ class ChatClient(metaclass=ClientCheck):
         logger.info('Sending message')
         return self._send_msg(msg)
 
-    def connect(self):
+    def recive(self):
         try:
             self.s.connect((self.host, self.port))
-        except Exception:
-            return 0
+        except Exception as e:
+            logger.error(e)
         else:
             logger.info('Connected')
-
-    def recive(self):
         while True:
             if not self.block:
                 try:
