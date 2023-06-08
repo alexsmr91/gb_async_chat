@@ -3,11 +3,11 @@ from datetime import datetime
 
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker
-from chat_server.database.dbcore import Base
+from database.dbcore import Base
 
-from chat_server.models.clients import Clients
-from chat_server.models.contacts import Contacts
-from chat_server.models.logins import Logins
+from models.clients import Clients
+from models.contacts import Contacts
+from models.logins import Logins
 
 
 class Singleton(type):
@@ -57,10 +57,14 @@ class DBManager(metaclass=Singleton):
         return self._session.query(Clients).filter_by(id=client_id).first()
 
     def get_contacts(self, login):
-        client_id = self.get_client_by_login(login).id
         res = []
-        for contact in self._session.query(Contacts).filter_by(owner_id=client_id):
-            res.append(self.get_client_by_id(contact.client_id).login)
+        try:
+            client_id = self.get_client_by_login(login).id
+        except AttributeError:
+            pass
+        else:
+            for contact in self._session.query(Contacts).filter_by(owner_id=client_id):
+                res.append(self.get_client_by_id(contact.client_id).login)
         return res
 
     def are_friends(self, owner_id, client_id):

@@ -1,6 +1,8 @@
 import json
 from datetime import datetime
 from json import JSONDecodeError
+from config import *
+from crypto import *
 
 
 class ObjDict(dict):
@@ -22,12 +24,23 @@ class ObjDict(dict):
             return None
 
 
-def load_json_or_none(data):
+def load_json_or_none(data, private_key=""):
     try:
-        obj = ObjDict(json.loads(data))
+        decrypted = decrypt_message(data, private_key)
+        obj = ObjDict(json.loads(decrypted))
+    except Exception:
+        pass
+    else:
+        return obj
+    try:
+        obj = ObjDict(json.loads(data.decode(DEFAULT_CHARSET)))
     except JSONDecodeError:
         obj = ObjDict({})
     return obj
+
+
+def str2b(msg):
+    return msg.encode(DEFAULT_CHARSET)
 
 
 def ttime():

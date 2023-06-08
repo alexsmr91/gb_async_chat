@@ -2,25 +2,14 @@ import logging
 from threading import Thread
 from time import time, sleep
 from socket import *
-
 from PyQt5.QtCore import QObject, pyqtSignal, QThread
-
 from utils import *
-
 
 from database.database import DBManager
 from resp import *
 from validators import Port, ClientCheck
 
-PACKET_SIZE = 10000
-DEFAULT_CHARSET = 'utf8'
-TIMEOUT = 0.2
-
-USER_STATUS = 'Online'
-messages = []
-
 logger = logging.getLogger('chat')
-
 
 class ChatWatch(QObject):
 
@@ -87,7 +76,8 @@ class ChatClient(metaclass=ClientCheck):
             self.s.send(msg.encode(DEFAULT_CHARSET))
             data = self.s.recv(PACKET_SIZE)
             self.block = False
-            return load_json_or_none(data.decode(DEFAULT_CHARSET))
+            print(data)
+            return load_json_or_none(data)
         except Exception as e:
             logger.critical(e)
         self.block = False
@@ -160,9 +150,7 @@ class ChatClient(metaclass=ClientCheck):
             if not self.block:
                 try:
                     data = self.s.recv(PACKET_SIZE)
-                    obj = load_json_or_none(data.decode(DEFAULT_CHARSET))
+                    obj = load_json_or_none(data)
                     self.messages.append(obj)
-                    print("---------------")
-                    print(obj)
                 except OSError as e:
                     pass

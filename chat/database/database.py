@@ -8,8 +8,6 @@ from models.contacts import Contacts
 from models.messages import Message
 from models.profile import Profile
 
-DATABASE_NAME = 'chat.db'
-
 
 class Singleton(type):
     def __init__(cls, name, bases, attrs, **kwargs):
@@ -23,7 +21,7 @@ class Singleton(type):
 
 
 class DBManager(metaclass=Singleton):
-    def __init__(self, file_name=DATABASE_NAME):
+    def __init__(self, file_name):
         self.engine = create_engine(f'sqlite:///{file_name}', pool_recycle=3600)
         session = sessionmaker(bind=self.engine)
         self._session = session()

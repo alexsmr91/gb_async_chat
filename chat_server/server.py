@@ -12,9 +12,8 @@ from functools import wraps
 import traceback
 from validators import Port, ServerCheck
 from database.database import DBManager
+from config import *
 
-PACKET_SIZE = 10000
-DEFAULT_CHARSET = 'utf8'
 logger = logging.getLogger('chat_server')
 
 

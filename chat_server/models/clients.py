@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Integer, String, Date, func
-from chat_server.database.dbcore import Base
+from database.dbcore import Base
 
 
 class Clients(Base):

@@ -1,6 +1,5 @@
 import logging
 import sys
-
 from PyQt5.QtCore import QThread
 from PyQt5.QtGui import QStandardItem
 from PyQt5.QtWidgets import QApplication
@@ -8,9 +7,9 @@ from forms import main_form
 from client import ChatWatch
 from utils import *
 from resp import *
+from config import *
 
 logger = logging.getLogger('chat')
-num_retries = 3
 
 
 class ChatApp:
@@ -48,7 +47,6 @@ class ChatApp:
             if from_login == self.active_chat:
                 self.window.ui.txt_chat.append(text)
 
-
     def login_on_server(self):
         profile = self.chat.chat.db.get_my_profile()
         try:
@@ -57,30 +55,25 @@ class ChatApp:
             self.login = self.window.open_login_dialog()
         if self.login == '' or self.login is None:
             sys.exit()
-        for i in range(num_retries):
-            prof = self.chat.chat.send_login(self.login)
-            try:
-                prof = prof.client
-                self.chat.chat.db.renew_profile(prof['login'], prof['name'], prof['surname'],
-                                           str2date(prof['birthday_date']), prof['status'])
-                return 0
-            except AttributeError:
-                logger.info('Авторизация, нет связи')
-        self.window.show_ok_dialog("Нет связи с сервером")
+        #abc = self.chat.chat.refresh_keys()
+        prof = self.chat.chat.send_login(self.login)
+        try:
+            prof = prof.client
+            self.chat.chat.db.renew_profile(prof['login'], prof['name'], prof['surname'],
+                                       str2date(prof['birthday_date']), prof['status'])
+        except AttributeError:
+            logger.info('Авторизация, нет связи')
 
     def renew_contact_list(self):
-        for i in range(num_retries):
-            try:
-                contacts = self.chat.chat.send_get_contacts(self.login).alert
-            except Exception:
-                logger.info('Обновление контактов, нет связи')
-            else:
-                for contact in contacts:
-                    item = QStandardItem(contact)
-                    self.window.ui.model.appendRow(item)
-                self.chat.chat.db.renew_contacts(contacts)
-                return 0
-        self.window.show_ok_dialog("Нет связи с сервером")
+        try:
+            contacts = self.chat.chat.send_get_contacts(self.login).alert
+        except Exception:
+            logger.info('Обновление контактов, нет связи')
+        else:
+            for contact in contacts:
+                item = QStandardItem(contact)
+                self.window.ui.model.appendRow(item)
+            self.chat.chat.db.renew_contacts(contacts)
 
     def btn_add_clicked(self):
         contact_login = self.window.ui.txt_search.text()
@@ -161,8 +154,8 @@ if __name__ == '__main__':
     try:
         db_path = args[1]
     except IndexError:
-        db_path = 'chat.sqlite.db'
-    settings = load_server_config('config.ini')
+        db_path = DB_DEF_NAME
+    settings = load_server_config(SRV_CFG_FILE_NAME)
     host = settings['host']
     port = int(settings['port'])
     chat_app = ChatApp(host, port, db_path)

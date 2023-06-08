@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Integer, ForeignKey
-from chat_server.database.dbcore import Base
+from database.dbcore import Base
 from sqlalchemy.orm import relationship
 
 
