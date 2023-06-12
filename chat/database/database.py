@@ -1,5 +1,7 @@
 import datetime
 from os import path
+from typing import Optional, Type, List
+
 from sqlalchemy import create_engine, MetaData, Table, or_, and_
 from sqlalchemy.orm import sessionmaker
 from database.dbcore import Base
@@ -21,7 +23,7 @@ class Singleton(type):
 
 
 class DBManager(metaclass=Singleton):
-    def __init__(self, file_name):
+    def __init__(self, file_name: str):
         self.engine = create_engine(f'sqlite:///{file_name}', pool_recycle=3600)
         session = sessionmaker(bind=self.engine)
         self._session = session()
@@ -31,7 +33,7 @@ class DBManager(metaclass=Singleton):
     def close(self):
         self._session.close()
 
-    def renew_contacts(self, contacts):
+    def renew_contacts(self, contacts: list) -> None:
         self.clear_table('contacts')
         for con in contacts:
             contact = Contacts(login=con)
@@ -39,30 +41,30 @@ class DBManager(metaclass=Singleton):
         self._session.commit()
         self.close()
 
-    def clear_table(self, table):
+    def clear_table(self, table: str) -> None:
         table = Table(table, MetaData())
         delete_statement = table.delete()
         self._session.execute(delete_statement)
         self._session.commit()
 
-    def renew_profile(self, login, name, surname, birthday_date, status):
+    def get_my_profile(self) -> Optional[Type[Profile]]:
+        return self._session.query(Profile).filter_by().first()
+
+    def renew_profile(self, login: str, name: str, surname: str, birthday_date: datetime.datetime, status: str) -> Profile:
         res = self.get_my_profile()
         if not res:
-            profile = Profile(login=login, name=name, surname=surname, birthday_date=birthday_date, status=status)
-            self._session.add(profile)
+            res = Profile(login=login, name=name, surname=surname, birthday_date=birthday_date, status=status)
+            self._session.add(res)
         else:
             res.login = login
             res.name = name
             res.surname = surname
             res.birthday_date = birthday_date
-            res. status = status
+            res.status = status
         self._session.commit()
-        self.close()
+        return res
 
-    def get_my_profile(self):
-        return self._session.query(Profile).filter_by().first()
-
-    def add_message(self, from_login, to_login, msg, time=datetime.datetime.now()):
+    def add_message(self, from_login: str, to_login: str, msg: str, time: datetime.time) -> str:
         message = Message(from_login=from_login, to_login=to_login, message=msg, date_time=time)
         self._session.add(message)
         self._session.commit()
@@ -70,7 +72,7 @@ class DBManager(metaclass=Singleton):
         self.close()
         return res
 
-    def get_chat_history(self, from_login, login):
+    def get_chat_history(self, from_login: str, login: str) -> List[str]:
         res = []
         messages = self._session.query(Message).filter(
             or_(
@@ -82,7 +84,7 @@ class DBManager(metaclass=Singleton):
             res.append(f'{message}')
         return res
 
-    def clear_history(self, from_login, login):
+    def clear_history(self, from_login: str, login: str):
         messages = self._session.query(Message).filter(
             or_(
                 and_(Message.from_login == from_login, Message.to_login == login),

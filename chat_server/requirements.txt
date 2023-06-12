@@ -1,0 +1,11 @@
+greenlet==2.0.2
+importlib-metadata==6.6.0
+typing_extensions==4.6.3
+zipp==3.15.0
+SQLAlchemy==2.0.15
+PyQt5==5.15.9
+PyQt5-Qt5==5.15.2
+PyQt5-sip==12.12.1
+cryptography==41.0.1
+cffi==1.15.1
+pycparser==2.21

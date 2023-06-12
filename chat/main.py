@@ -1,5 +1,7 @@
 import logging
 import sys
+from datetime import datetime
+
 from PyQt5.QtCore import QThread
 from PyQt5.QtGui import QStandardItem
 from PyQt5.QtWidgets import QApplication
@@ -13,9 +15,10 @@ logger = logging.getLogger('chat')
 
 
 class ChatApp:
-    def __init__(self, host, port, db_path):
+    def __init__(self, host: str, port: int, db_path: str):
         self.chat = ChatWatch(self, host, port, db_path)
         self.thread1 = QThread()
+
         self.chat.moveToThread(self.thread1)
         self.thread1.started.connect(self.chat.start)
         self.chat.gotData.connect(self.new_message)
@@ -34,35 +37,58 @@ class ChatApp:
         self.renew_contact_list()
         sys.exit(self.app.exec_())
 
-
     def new_message(self):
         while len(self.chat.chat.messages) > 0:
             msg = ObjDict(self.chat.chat.messages.pop(0))
             self.chat.mess_len -= 1
             from_login = msg.login
             to_login = msg.contact_login
-            time = datetime.fromtimestamp(msg.time)
+            tm = datetime.fromtimestamp(msg.time)
             text = msg.message
-            text = self.chat.chat.db.add_message(from_login, to_login, text, time)
+            text = self.chat.chat.db.add_message(from_login, to_login, text, tm)
             if from_login == self.active_chat:
                 self.window.ui.txt_chat.append(text)
 
     def login_on_server(self):
+        self.chat.chat.refresh_keys()
         profile = self.chat.chat.db.get_my_profile()
-        try:
+        if profile:
             self.login = profile.login
-        except AttributeError:
-            self.login = self.window.open_login_dialog()
-        if self.login == '' or self.login is None:
-            sys.exit()
-        #abc = self.chat.chat.refresh_keys()
-        prof = self.chat.chat.send_login(self.login)
-        try:
-            prof = prof.client
-            self.chat.chat.db.renew_profile(prof['login'], prof['name'], prof['surname'],
-                                       str2date(prof['birthday_date']), prof['status'])
-        except AttributeError:
-            logger.info('Авторизация, нет связи')
+        else:
+            self.login = ''
+        allowed = False
+        login = None
+        while not allowed:
+            try:
+                login, password = self.window.open_login_dialog(self.login)
+            except:
+                pass
+            if login == '' or login is None or password == '':
+                sys.exit()
+            if self.login == login:
+                profile.set_password(password)
+                resp = self.chat.chat.send_login(self.login, profile.password_hash)
+            else:
+                answer = self.window.show_yes_no_dialog(f"История сообщений {self.login} будет безвозвратно утеряна. Вы уверены?")
+                if answer:
+                    self.login = login
+                    self.chat.chat.db.clear_table("messages")
+                    self.chat.chat.db.clear_table("contacts")
+                    profile = self.chat.chat.db.renew_profile(
+                        login=login,
+                        name='',
+                        surname='',
+                        birthday_date=datetime.today(),
+                        status=USER_STATUS
+                    )
+                    profile.set_password(password)
+                    resp = self.chat.chat.send_login(self.login, profile.password_hash)
+            try:
+                allowed = resp.status == OK_200
+                if resp.status == WRONG_LOGIN_PASSWORD_402:
+                    self.window.show_ok_dialog("Неверный логин/пароль")
+            except Exception:
+                pass
 
     def renew_contact_list(self):
         try:
@@ -124,7 +150,12 @@ class ChatApp:
             resp = self.chat.chat.send_message(self.login, self.active_chat, text)
             if resp.status == CONFIRMATION_202:
                 if self.login != self.active_chat:
-                    res = self.chat.chat.db.add_message(self.login, self.active_chat, text)
+                    res = self.chat.chat.db.add_message(
+                        self.login,
+                        self.active_chat,
+                        text,
+                        datetime.now().replace(microsecond=0)
+                    )
                     self.window.ui.txt_chat.append(res)
                 self.window.ui.txt_send.setText('')
             else:
